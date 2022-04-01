@@ -1,0 +1,1 @@
+merge_relation.txt是由原来的42种关系简化合并后的17种关系

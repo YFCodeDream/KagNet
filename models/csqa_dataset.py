@@ -10,15 +10,18 @@ import dgl
 import networkx as nx
 import random
 
+
 def load_embeddings(path):
     print("Loading glove concept embeddings with pooling:", path)
     concept_vec = np.load(path)
     print("done!")
     return concept_vec
 
+
 class data_with_paths(data.Dataset):
 
-    def __init__(self, statement_json_file, pf_json_file, pretrained_sent_vecs, num_choice=5, max_path_len=5, start=0, end=None, cut_off=3):
+    def __init__(self, statement_json_file, pf_json_file, pretrained_sent_vecs, num_choice=5, max_path_len=5, start=0,
+                 end=None, cut_off=3):
         self.qids = []
         self.statements = []
         self.correct_labels = []
@@ -30,7 +33,6 @@ class data_with_paths(data.Dataset):
                 statement_data = json.loads(line.strip())
                 statement_json_data.append(statement_data)
         print("Done!")
-
 
         print("loading sent_vecs from %s" % pretrained_sent_vecs)
         self.input_sent_vecs = np.load(pretrained_sent_vecs)
@@ -57,7 +59,6 @@ class data_with_paths(data.Dataset):
         self.cpt_path_data = []
         self.rel_path_data = []
 
-
         start_time = timeit.default_timer()
         print("loading paths from %s" % pf_json_file)
         with open(pf_json_file, 'rb') as handle:
@@ -80,12 +81,12 @@ class data_with_paths(data.Dataset):
                         q = p[0] + 1
                         a = p[-1] + 1
                         new_qa_pair = False
-                        if (q,a) not in qa_pairs:
-                            qa_pairs.append((q,a))
+                        if (q, a) not in qa_pairs:
+                            qa_pairs.append((q, a))
                             new_qa_pair = True
 
                         if len(p) > cut_off and not new_qa_pair:
-                            continue  #  cut off by length of concepts
+                            continue  # cut off by length of concepts
 
                         # padding dummy concepts and relations
 
@@ -120,7 +121,8 @@ class data_with_paths(data.Dataset):
         self.rel_path_data = self.rel_path_data[start:end]
         self.qa_pair_data = self.qa_pair_data[start:end]
 
-        assert len(self.statements) == len(self.correct_labels) == len(self.qids) == len(self.cpt_path_data) == len(self.rel_path_data) == len(self.qa_pair_data)
+        assert len(self.statements) == len(self.correct_labels) == len(self.qids) == len(self.cpt_path_data) == len(
+            self.rel_path_data) == len(self.qa_pair_data)
         self.n_samples = len(self.statements)
 
     def __len__(self):
@@ -133,8 +135,8 @@ class data_with_paths(data.Dataset):
 
 class data_with_graphs(data.Dataset):
 
-    def __init__(self, statement_json_file, graph_ngx_file, pretrained_sent_vecs, num_choice=5, start=0, end=None, reload=True):
-
+    def __init__(self, statement_json_file, graph_ngx_file, pretrained_sent_vecs, num_choice=5, start=0, end=None,
+                 reload=True):
 
         self.qids = []
         self.statements = []
@@ -147,7 +149,6 @@ class data_with_graphs(data.Dataset):
                 statement_data = json.loads(line.strip())
                 statement_json_data.append(statement_data)
         print("Done!")
-
 
         print("loading sent_vecs from %s" % pretrained_sent_vecs)
         self.input_sent_vecs = np.load(pretrained_sent_vecs)
@@ -168,7 +169,6 @@ class data_with_graphs(data.Dataset):
                 statement_id += 1
             self.statements.append(np.array(statements))
             self.qa_text.append(qa_text_cur)
-
 
         self.nxgs = []
         self.dgs = []
@@ -193,13 +193,13 @@ class data_with_graphs(data.Dataset):
             print("finished loading in %.3f secs" % (float(timeit.default_timer() - start_time)))
         else:
 
-
             for index, nxg_str in tqdm(enumerate(self.nxgs), total=len(self.nxgs)):
                 nxg = nx.node_link_graph(json.loads(nxg_str))
                 dg = dgl.DGLGraph(multigraph=True)
                 # dg.from_networkx(nxg, edge_attrs=["rel"])
                 dg.from_networkx(nxg)
-                cids = [nxg.nodes[n_id]['cid']+1 for n_id in range(len(dg))] # -1 --> 0 and 0 stands for a palceholder concept
+                cids = [nxg.nodes[n_id]['cid'] + 1 for n_id in
+                        range(len(dg))]  # -1 --> 0 and 0 stands for a palceholder concept
                 # rel_types = [nxg.edges[u, v, r]["rel"] + 1 for u, v, r in nxg.edges]  # 0 is used for
 
                 # print(line)
@@ -239,11 +239,10 @@ class data_with_graphs(data.Dataset):
         return torch.Tensor([self.statements[index]]), torch.Tensor([self.correct_labels[index]]), self.dgs[index]
 
 
-
 class data_with_graphs_and_paths(data.Dataset):
 
-    def __init__(self, statement_json_file, graph_ngx_file, pf_json_file, pretrained_sent_vecs, num_choice=5, start=0, end=None, reload=True, cut_off=3):
-
+    def __init__(self, statement_json_file, graph_ngx_file, pf_json_file, pretrained_sent_vecs, num_choice=5, start=0,
+                 end=None, reload=True, cut_off=3):
 
         self.qids = []
         self.statements = []
@@ -256,7 +255,6 @@ class data_with_graphs_and_paths(data.Dataset):
                 statement_data = json.loads(line.strip())
                 statement_json_data.append(statement_data)
         print("Done!")
-
 
         print("loading sent_vecs from %s" % pretrained_sent_vecs)
         self.input_sent_vecs = np.load(pretrained_sent_vecs)
@@ -277,7 +275,6 @@ class data_with_graphs_and_paths(data.Dataset):
                 statement_id += 1
             self.statements.append(np.array(statements))
             self.qa_text.append(qa_text_cur)
-
 
         self.nxgs = []
         self.dgs = []
@@ -302,13 +299,13 @@ class data_with_graphs_and_paths(data.Dataset):
             print("finished loading in %.3f secs" % (float(timeit.default_timer() - start_time)))
         else:
 
-
             for index, nxg_str in tqdm(enumerate(self.nxgs), total=len(self.nxgs)):
                 nxg = nx.node_link_graph(json.loads(nxg_str))
                 dg = dgl.DGLGraph(multigraph=True)
                 # dg.from_networkx(nxg, edge_attrs=["rel"])
                 dg.from_networkx(nxg)
-                cids = [nxg.nodes[n_id]['cid']+1 for n_id in range(len(dg))] # -1 --> 0 and 0 stands for a palceholder concept
+                cids = [nxg.nodes[n_id]['cid'] + 1 for n_id in
+                        range(len(dg))]  # -1 --> 0 and 0 stands for a palceholder concept
                 # rel_types = [nxg.edges[u, v, r]["rel"] + 1 for u, v, r in nxg.edges]  # 0 is used for
 
                 # print(line)
@@ -330,7 +327,6 @@ class data_with_graphs_and_paths(data.Dataset):
 
         self.nxgs = list(zip(*(iter(self.nxgs),) * num_choice))
         self.dgs = list(zip(*(iter(self.dgs),) * num_choice))
-
 
         ### loading graphs done
         # load all qa and paths
@@ -360,8 +356,6 @@ class data_with_graphs_and_paths(data.Dataset):
                         q = p[0] + 1
                         a = p[-1] + 1
 
-
-
                         if len(p) > cut_off:
                             continue  # cut off by length of concepts
 
@@ -389,9 +383,6 @@ class data_with_graphs_and_paths(data.Dataset):
             self.qa_pair_data.append(list(qa_pairs))
             self.cpt_path_data.append(paths)
             self.rel_path_data.append(rels)
-
-
-
 
         self.cpt_path_data = list(zip(*(iter(self.cpt_path_data),) * num_choice))
         self.rel_path_data = list(zip(*(iter(self.rel_path_data),) * num_choice))
@@ -429,9 +420,6 @@ class data_with_graphs_and_paths(data.Dataset):
                self.cpt_path_data[index], self.rel_path_data[index], self.qa_pair_data[index], self.qa_text[index]
 
 
-
-
-
 def collate_csqa_paths(samples):
     # The input `samples` is a list of pairs
     #  (graph, label, qid, aid).
@@ -439,7 +427,6 @@ def collate_csqa_paths(samples):
     sents_vecs = torch.stack(statements)
 
     return sents_vecs, torch.Tensor([[i] for i in correct_labels]), cpt_path_data, rel_path_data, qa_pair_data
-
 
 
 def collate_csqa_graphs(samples):
@@ -457,15 +444,14 @@ def collate_csqa_graphs(samples):
 
     batched_graph = dgl.batch(flat_graph_data)
     sents_vecs = torch.stack(statements)
-    return sents_vecs,  torch.Tensor([[i] for i in correct_labels]), batched_graph
-
-
+    return sents_vecs, torch.Tensor([[i] for i in correct_labels]), batched_graph
 
 
 def collate_csqa_graphs_and_paths(samples):
     # The input `samples` is a list of pairs
     #  (graph, label, qid, aid, sentv).
-    statements, correct_labels, graph_data, cpt_path_data, rel_path_data, qa_pair_data, qa_text = map(list, zip(*samples))
+    statements, correct_labels, graph_data, cpt_path_data, rel_path_data, qa_pair_data, qa_text = map(list,
+                                                                                                      zip(*samples))
 
     flat_graph_data = []
     for gd in graph_data:
@@ -483,9 +469,7 @@ def collate_csqa_graphs_and_paths(samples):
         acc_start += len(g.nodes())
         concept_mapping_dicts.append(concept_mapping_dict)
 
-
     batched_graph = dgl.batch(flat_graph_data)
     sents_vecs = torch.stack(statements)
-    return sents_vecs,  torch.Tensor([[i] for i in correct_labels]), batched_graph, cpt_path_data, rel_path_data, qa_pair_data, concept_mapping_dicts
-
-
+    return sents_vecs, torch.Tensor(
+        [[i] for i in correct_labels]), batched_graph, cpt_path_data, rel_path_data, qa_pair_data, concept_mapping_dicts
