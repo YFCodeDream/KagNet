@@ -1,6 +1,7 @@
 from tqdm import tqdm
 import nltk
 import json
+
 # print('NLTK Version: %s' % (nltk.__version__))
 nltk.download('stopwords')
 nltk_stopwords = nltk.corpus.stopwords.words('english')
@@ -11,8 +12,6 @@ import configparser
 import sys
 
 data = []
-
-
 
 concept_vocab = set()
 config = configparser.ConfigParser()
@@ -62,6 +61,7 @@ for item in tqdm(data):
     prune_data.append(item)
 
 import jsbeautifier
+
 opts = jsbeautifier.default_options()
 opts.indent_size = 2
 

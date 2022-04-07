@@ -4,10 +4,8 @@ config = configparser.ConfigParser()
 config.read("paths.cfg")
 
 
-
 def save_data():
     output_folder = config["paths"]["openie_fodler"]
-
 
     # write entity2id.txt
     entity2id = {}
@@ -17,7 +15,7 @@ def save_data():
         entity2id[w] = len(entity2id)
 
     with open(output_folder + "entity2id.txt", "w", encoding="utf8") as f:
-        f.write("%d\n"%len(entity2id))
+        f.write("%d\n" % len(entity2id))
         for e in entity2id:
             f.write("%s\t%d\n" % (e, entity2id[e]))
 
@@ -32,7 +30,6 @@ def save_data():
         f.write("%d\n" % len(relation2id))
         for e in relation2id:
             f.write("%s\t%d\n" % (e, relation2id[e]))
-
 
     # write train2id.txt
     triples = []
@@ -50,5 +47,6 @@ def save_data():
             fw.write("%d\t%d\t%d\n" % (t[0], t[2], t[1]))
 
     return triples
+
 
 save_data()

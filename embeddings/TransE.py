@@ -1,9 +1,8 @@
-from OpenKE.config import Config
-from OpenKE import models
-import numpy as np
-import tensorflow as tf
-import json
 import argparse
+import json
+
+from OpenKE import models
+from OpenKE.config import Config
 
 parser = argparse.ArgumentParser()
 parser.add_argument('opt_method', help='SGD/Adagrad/...')

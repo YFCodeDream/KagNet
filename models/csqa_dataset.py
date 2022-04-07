@@ -240,9 +240,16 @@ class data_with_graphs(data.Dataset):
 
 
 class data_with_graphs_and_paths(data.Dataset):
-
-    def __init__(self, statement_json_file, graph_ngx_file, pf_json_file, pretrained_sent_vecs, num_choice=5, start=0,
-                 end=None, reload=True, cut_off=3):
+    def __init__(self,
+                 statement_json_file,
+                 graph_ngx_file,
+                 pf_json_file,
+                 pretrained_sent_vecs,
+                 num_choice=5,
+                 start=0,
+                 end=None,
+                 reload=True,
+                 cut_off=3):
 
         self.qids = []
         self.statements = []

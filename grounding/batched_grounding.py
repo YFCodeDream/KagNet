@@ -44,6 +44,8 @@ def combine():
     opts.indent_size = 2
 
     # 汇总每一组mcp文件，生成包含所有数据的mcp文件
+    # 每一个statement对应
+    # {"sent": s, "ans": a, "qc": list(question_concepts), "ac": list(answer_concepts)}
     with open(PATH + ".mcp", 'w') as fp:
         fp.write(jsbeautifier.beautify(json.dumps(final_json), opts))
 

@@ -12,13 +12,16 @@ from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
 import json
 from models import KnowledgeEnhancedRelationNetwork, RelationNetwork, weight_init, GCN_Sent, KnowledgeAwareGraphNetworks
 from tqdm import tqdm
-from csqa_dataset import data_with_paths, collate_csqa_paths, data_with_graphs, data_with_graphs_and_paths, collate_csqa_graphs, collate_csqa_graphs_and_paths
+from csqa_dataset import data_with_paths, collate_csqa_paths, data_with_graphs, data_with_graphs_and_paths, \
+    collate_csqa_graphs, collate_csqa_graphs_and_paths
 from parallel import DataParallelModel, DataParallelCriterion
 import copy
 import random
+
 torch.manual_seed(42)
 random.seed(42)
 np.random.seed(42)
+
 
 def load_embeddings(pretrain_embed_path):
     print("Loading glove concept embeddings with pooling:", pretrain_embed_path)
@@ -27,7 +30,7 @@ def load_embeddings(pretrain_embed_path):
     return concept_vec
 
 
-def train_epoch_kag_netowrk(train_set, batch_size, optimizer, device, model, num_choice, loss_func):
+def train_epoch_kag_network(train_set, batch_size, optimizer, device, model, num_choice, loss_func):
     model.train()
     dataset_loader = data.DataLoader(train_set, batch_size=batch_size, num_workers=0, shuffle=True,
                                      collate_fn=collate_csqa_graphs_and_paths)
@@ -56,8 +59,8 @@ def train_epoch_kag_netowrk(train_set, batch_size, optimizer, device, model, num
             flat_rel_paths.extend(cur_rel_paths)
 
         flat_statements = torch.stack(flat_statements).to(device)
-        flat_logits = model(flat_statements, flat_qa_pairs, flat_cpt_paths, flat_rel_paths, graphs, concept_mapping_dicts)
-
+        flat_logits = model(flat_statements, flat_qa_pairs, flat_cpt_paths, flat_rel_paths, graphs,
+                            concept_mapping_dicts)
 
         y = torch.Tensor([1] * len(statements) * (num_choice - 1)).to(device)
         assert len(flat_logits) == len(flat_statements)
@@ -79,8 +82,7 @@ def train_epoch_kag_netowrk(train_set, batch_size, optimizer, device, model, num
         optimizer.step()
 
 
-
-def eval_kag_netowrk(eval_set, batch_size ,  device, model, num_choice):
+def eval_kag_netowrk(eval_set, batch_size, device, model, num_choice):
     model.eval()
     dataset_loader = data.DataLoader(eval_set, batch_size=batch_size, num_workers=0, shuffle=True,
                                      collate_fn=collate_csqa_graphs_and_paths)
@@ -110,7 +112,6 @@ def eval_kag_netowrk(eval_set, batch_size ,  device, model, num_choice):
         flat_logits = model(flat_statements, flat_qa_pairs, flat_cpt_paths, flat_rel_paths, graphs,
                             concept_mapping_dicts)
 
-
         assert len(flat_statements) == len(statements) * num_choice
 
         # flat_loss = loss_function(label_preds, labels)
@@ -133,10 +134,10 @@ def eval_kag_netowrk(eval_set, batch_size ,  device, model, num_choice):
     return acc
 
 
-
-
-
 def train_kagnet_main():
+    # path_scoring.py里是
+    # concept_embs = np.load("../embeddings/openke_data/embs/glove_initialized/glove.transe.sgd.ent.npy")
+    # relation_embs = np.load("../embeddings/openke_data/embs/glove_initialized/glove.transe.sgd.rel.npy")
     pretrain_cpt_emd_path = "../embeddings/openke_data/embs/glove_initialized/ent.npy"
     pretrain_rel_emd_path = "../embeddings/openke_data/embs/glove_initialized/rel.npy"
 
@@ -148,9 +149,10 @@ def train_kagnet_main():
     # add one concept vec for dummy concept
     concept_dim = pretrained_concept_emd.shape[1]
     concept_num = pretrained_concept_emd.shape[0] + 1  # for dummy concept
+    # 在第一行插入全零行
     pretrained_concept_emd = np.insert(pretrained_concept_emd, 0, np.zeros((1, concept_dim)), 0)
 
-    relation_num = pretrained_relation_emd.shape[0] * 2 + 1  # for inverse and dummy relations
+    relation_num = pretrained_relation_emd.shape[0] * 2 + 1  # for inverse and dummy relations 还要存储逆向的关系，所以乘二
     relation_dim = pretrained_relation_emd.shape[1]
     pretrained_relation_emd = np.concatenate((pretrained_relation_emd, pretrained_relation_emd))
     pretrained_relation_emd = np.insert(pretrained_relation_emd, 0, np.zeros((1, relation_dim)), 0)
@@ -161,7 +163,7 @@ def train_kagnet_main():
     lstm_dim = 128
     lstm_layer_num = 1
     dropout = 0.0
-    bidirect = False
+    bi_direct = False
     batch_size = 50
     n_epochs = 15
     num_choice = 5
@@ -175,27 +177,25 @@ def train_kagnet_main():
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
     train_set = data_with_graphs_and_paths("../datasets/csqa_new/train_rand_split.jsonl.statements",
-                      "../datasets/csqa_new/train_rand_split.jsonl.statements.pruned.0.15.pnxg",
-                      "../datasets/csqa_new/train_rand_split.jsonl.statements.mcp.pf.cls.pruned.0.15.pickle",
-                      "../datasets/csqa_new/train_rand_split.jsonl.statements.finetuned.large.-2.npy",
-                      num_choice=5, reload=False, cut_off=3, start=0, end=None)
-    
+                                           "../datasets/csqa_new/train_rand_split.jsonl.statements.pruned.0.15.pnxg",
+                                           "../datasets/csqa_new/train_rand_split.jsonl.statements.mcp.pf.cls.pruned.0.15.pickle",
+                                           "../datasets/csqa_new/train_rand_split.jsonl.statements.finetuned.large.-2.npy",
+                                           num_choice=5, reload=False, cut_off=3, start=0, end=None)
 
     dev_set = data_with_graphs_and_paths("../datasets/csqa_new/dev_rand_split.jsonl.statements",
-                      "../datasets/csqa_new/dev_rand_split.jsonl.statements.pruned.0.15.pnxg",
-                      "../datasets/csqa_new/dev_rand_split.jsonl.statements.mcp.pf.cls.pruned.0.15.pickle",
-                      "../datasets/csqa_new/dev_rand_split.jsonl.statements.finetuned.large.-2.npy",
-                      num_choice=5, reload=False, cut_off=3, start=0, end=None)
-
+                                         "../datasets/csqa_new/dev_rand_split.jsonl.statements.pruned.0.15.pnxg",
+                                         "../datasets/csqa_new/dev_rand_split.jsonl.statements.mcp.pf.cls.pruned.0.15.pickle",
+                                         "../datasets/csqa_new/dev_rand_split.jsonl.statements.finetuned.large.-2.npy",
+                                         num_choice=5, reload=False, cut_off=3, start=0, end=None)
 
     print("len(train_set):", len(train_set), "len(dev_set):", len(dev_set))
 
     model = KnowledgeAwareGraphNetworks(sent_dim, concept_dim, relation_dim,
-                                             concept_num, relation_num, qas_encoded_dim,
-                                             pretrained_concept_emd, pretrained_relation_emd,
-                                             lstm_dim, lstm_layer_num, device, graph_hidden_dim, graph_output_dim,
-                                             dropout=dropout, bidirect=bidirect, num_random_paths=num_random_paths,
-                                             path_attention=True, qa_attention=True)
+                                        concept_num, relation_num, qas_encoded_dim,
+                                        pretrained_concept_emd, pretrained_relation_emd,
+                                        lstm_dim, lstm_layer_num, device, graph_hidden_dim, graph_output_dim,
+                                        dropout=dropout, bidirect=bi_direct, num_random_paths=num_random_paths,
+                                        path_attention=True, qa_attention=True)
     model.to(device)
 
     print("checking model parameters")
@@ -209,7 +209,6 @@ def train_kagnet_main():
 
     parameters = filter(lambda p: p.requires_grad, model.parameters())
 
-
     optimizer = torch.optim.Adam(parameters, lr=0.001, weight_decay=0.0001, amsgrad=True)
     loss_func = torch.nn.MarginRankingLoss(margin=0.2, size_average=None, reduce=None, reduction='mean')
 
@@ -217,7 +216,7 @@ def train_kagnet_main():
     best_dev_acc = 0.0
     for i in range(n_epochs):
         print('epoch: %d start!' % i)
-        train_epoch_kag_netowrk(train_set, batch_size, optimizer, device, model, num_choice, loss_func)
+        train_epoch_kag_network(train_set, batch_size, optimizer, device, model, num_choice, loss_func)
 
         # train_acc = eval_kag_netowrk(train_set, batch_size, device, model, num_choice)
         # print("training acc: %.5f" % train_acc, end="\t\t")

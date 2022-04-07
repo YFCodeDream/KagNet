@@ -230,7 +230,7 @@ def process(filename, batch_id=-1):
         batch_answers = answers
 
     # 一个mcp文件对应100组中的一个组
-    # 每个问题5个statement，所以一个mcp文件存9741*5/100 = 488个statement的C_q和C_a
+    # 以train为例，每个问题5个statement，所以一个mcp文件存9741*5/100 = 488个statement的C_q和C_a
     res = match_mentioned_concepts(nlp, sents=batch_sents, answers=batch_answers, batch_id=batch_id)
     with open(output_path, 'w') as fo:
         json.dump(res, fo)

@@ -1,5 +1,4 @@
 import argparse
-import csv
 import json
 import logging
 import os
@@ -12,12 +11,12 @@ import torch
 from torch.utils.data import (DataLoader, RandomSampler, SequentialSampler,
                               TensorDataset)
 from torch.utils.data.distributed import DistributedSampler
-from tqdm import tqdm, trange
+from tqdm import tqdm
 
 sys.path.append("./pytorch-pretrained-BERT")
 from pytorch_pretrained_bert.file_utils import PYTORCH_PRETRAINED_BERT_CACHE
-from pytorch_pretrained_bert.modeling import BertForMultipleChoice, BertForMultipleChoiceExtraction, WEIGHTS_NAME, CONFIG_NAME, BertConfig
-from pytorch_pretrained_bert.optimization import BertAdam, warmup_linear
+from pytorch_pretrained_bert.modeling import BertForMultipleChoiceExtraction, BertConfig
+from pytorch_pretrained_bert.optimization import BertAdam
 from pytorch_pretrained_bert.tokenization import BertTokenizer
 
 logging.basicConfig(format = '%(asctime)s - %(levelname)s - %(name)s -   %(message)s',
@@ -26,7 +25,18 @@ logging.basicConfig(format = '%(asctime)s - %(levelname)s - %(name)s -   %(messa
 logger = logging.getLogger(__name__)
 
 '''
-python extract_csqa_bert.py --bert_model bert-large-uncased --do_eval --do_lower_case --data_dir ../datasets/csqa_new --eval_batch_size 60 --learning_rate 1e-4  --max_seq_length 60 --output_dir ./models/ --save_model_name bert_large_1e-4_g4w05wd05m70 --data_split_to_extract dev_rand_split.jsonl --output_sentvec_file ../datasets/csqa_new/dev_rand_split.jsonl.statements.fintuned.large.npy
+python extract_csqa_bert.py 
+--bert_model bert-large-uncased 
+--do_eval 
+--do_lower_case 
+--data_dir ../datasets/csqa_new 
+--eval_batch_size 60 
+--learning_rate 1e-4  
+--max_seq_length 60 
+--output_dir ./models/ 
+--save_model_name bert_large_1e-4_g4w05wd05m70 
+--data_split_to_extract dev_rand_split.jsonl 
+--output_sentvec_file ../datasets/csqa_new/dev_rand_split.jsonl.statements.fintuned.large.npy
 '''
 
 class SwagExample(object):
