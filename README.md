@@ -44,6 +44,8 @@ wget -P csqa_new https://s3.amazonaws.com/commensenseqa/train_rand_split.jsonl
 wget -P csqa_new https://s3.amazonaws.com/commensenseqa/dev_rand_split.jsonl 
 wget -P csqa_new https://s3.amazonaws.com/commensenseqa/test_rand_split_no_answers.jsonl
 
+在commonsenseQA数据集的每个部分的每一条数据里都生成了statement
+这个statement是根据answer和question改来的
 
 python convert_csqa.py csqa_new/train_rand_split.jsonl csqa_new/train_rand_split.jsonl.statements
 python convert_csqa.py csqa_new/dev_rand_split.jsonl csqa_new/dev_rand_split.jsonl.statements
@@ -52,11 +54,19 @@ python convert_csqa.py csqa_new/test_rand_split_no_answers.jsonl csqa_new/test_r
 
 ### Preprocess ConceptNet and embedding files
 ```
+把conceptnet改为<relation><subject><object><weight>的四元组
+
 cd ../conceptnet
 wget https://s3.amazonaws.com/conceptnet/downloads/2018/edges/conceptnet-assertions-5.6.0.csv.gz
 gzip -d conceptnet-assertions-5.6.0.csv.gz
 python extract_cpnet.py
 
+把conceptnet的每一行的知识，转成一条语料
+语料形式：
+{"tid": 0, "rel": "antonym", "subj": "ab_extra", "obj": "ab_intra", "temp": "you do not want a #SUBJ#
+with #OBJ#", "string": "you do not want a ab extra with ab intra", "subj_start": 5, "subj_end": 7, "obj_start":
+8, "obj_end": 10}
+temp模板是从template.txt里随机选择的
 
 cd ../triple_string
 python triple_string_generation.py
