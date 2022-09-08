@@ -71,6 +71,12 @@ temp模板是从template.txt里随机选择的
 cd ../triple_string
 python triple_string_generation.py
 
+生成concept(subj/obj)和relation的embedding，默认是取concept和relation单词表示的glove embedding(100维)的每一位的max
+其中concept(subj/obj)对应每个单词的glove embedding的最大值
+relation对应句子里除去subj和obj之外所有单词的glove embedding的最大值，依据检索到不同模板而更新(weighted average)
+生成concept_glove.max.npy和relation_glove.max.npy，存储对应的100维glove embedding
+生成concept_glove.max.txt和relation_glove.max.txt，存放subj/obj；rel出现过单词的次数字典，每一行是concept/relation    出现次数
+
 # get concept and relation embeddings with frequency and vocab files
 cd ../embeddings/
 cd glove/
